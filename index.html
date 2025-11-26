@@ -507,31 +507,23 @@ body {
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="renovationRate">裝修調整率 (%)</label>
-                    <input 
-                        type="number" 
-                        id="renovationRate" 
-                        class="form-input" 
-                        value="0"
-                        min="-100"
-                        max="100"
-                        step="1"
-                    >
-                    <div class="input-helper">裝修狀況調整（-100 至 100），預設為 0</div>
+                    <label class="form-label" for="renovationRate">裝修調整率</label>
+                    <select id="renovationRate" class="form-select">
+                        <option value="0" selected>0%</option>
+                        <option value="3">3%</option>
+                        <option value="5">5%</option>
+                    </select>
+                    <div class="input-helper">選擇裝修狀況調整率</div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="locationRate">區位調整率 (%)</label>
-                    <input 
-                        type="number" 
-                        id="locationRate" 
-                        class="form-input" 
-                        value="0"
-                        min="-100"
-                        max="100"
-                        step="1"
-                    >
-                    <div class="input-helper">區位優勢調整（-100 至 100），預設為 0</div>
+                    <label class="form-label" for="locationRate">區位調整率</label>
+                    <select id="locationRate" class="form-select">
+                        <option value="0" selected>0%</option>
+                        <option value="3">3%</option>
+                        <option value="5">5%</option>
+                    </select>
+                    <div class="input-helper">選擇區位優勢調整率</div>
                 </div>
             </div>
 
@@ -549,34 +541,34 @@ body {
                     
                     <div class="breakdown-item">
                         <div>
-                            <div class="breakdown-label">1️⃣ 基礎單價</div>
-                            <div class="breakdown-formula" id="baseFormula">坪數 × 行政區單價</div>
+                            <div class="breakdown-label">1️⃣ 單坪價格</div>
+                            <div class="breakdown-formula" id="unitPriceFormula">行政區單價</div>
                         </div>
-                        <div class="breakdown-value" id="basePrice">NT$ 0</div>
+                        <div class="breakdown-value" id="unitPrice">NT$ 0</div>
                     </div>
 
                     <div class="breakdown-item">
                         <div>
-                            <div class="breakdown-label">2️⃣ 屋齡調整</div>
-                            <div class="breakdown-formula" id="ageFormula">基礎單價 × (1 - 屋齡調整率)</div>
+                            <div class="breakdown-label">2️⃣ 總調整率</div>
+                            <div class="breakdown-formula" id="totalAdjustmentFormula">屋齡 + 裝修 + 區位</div>
                         </div>
-                        <div class="breakdown-value" id="ageAdjusted">NT$ 0</div>
+                        <div class="breakdown-value" id="totalAdjustment">0%</div>
                     </div>
 
                     <div class="breakdown-item">
                         <div>
-                            <div class="breakdown-label">3️⃣ 裝修調整</div>
-                            <div class="breakdown-formula" id="renovationFormula">上一步 × (1 + 裝修調整率%)</div>
+                            <div class="breakdown-label">3️⃣ 調整後單坪價格</div>
+                            <div class="breakdown-formula" id="adjustedUnitFormula">單坪價格 × (1 + 總調整率)</div>
                         </div>
-                        <div class="breakdown-value" id="renovationAdjusted">NT$ 0</div>
+                        <div class="breakdown-value" id="adjustedUnit">NT$ 0</div>
                     </div>
 
                     <div class="breakdown-item">
                         <div>
-                            <div class="breakdown-label">4️⃣ 區位調整</div>
-                            <div class="breakdown-formula" id="locationFormula">上一步 × (1 + 區位調整率%)</div>
+                            <div class="breakdown-label">4️⃣ 建議租金</div>
+                            <div class="breakdown-formula" id="finalFormula">調整後單坪價格 × 坪數</div>
                         </div>
-                        <div class="breakdown-value" id="locationAdjusted">NT$ 0</div>
+                        <div class="breakdown-value" id="finalBreakdown">NT$ 0</div>
                     </div>
                 </div>
 
@@ -591,7 +583,7 @@ body {
         <div class="formula-reference">
             <h3>📐 計算公式說明</h3>
             <div class="formula-text">
-                建議租金 = 坪數 × 行政區單價 × (1 - 屋齡調整率) × (1 + 裝修調整率%) × (1 + 區位調整率%)
+                建議租金 = 單坪價格 × (1 + 屋齡調整率 + 裝修調整率 + 區位調整率) × 坪數
             </div>
         </div>
     </div>
@@ -616,8 +608,8 @@ body {
         const areaSizeInput = document.getElementById('areaSize');
         const districtSelect = document.getElementById('district');
         const houseAgeSelect = document.getElementById('houseAge');
-        const renovationRateInput = document.getElementById('renovationRate');
-        const locationRateInput = document.getElementById('locationRate');
+        const renovationRateSelect = document.getElementById('renovationRate');
+        const locationRateSelect = document.getElementById('locationRate');
         const copyBtn = document.getElementById('copyBtn');
         const resetBtn = document.getElementById('resetBtn');
         const toast = document.getElementById('toast');
@@ -633,8 +625,8 @@ body {
             const areaSize = parseFloat(areaSizeInput.value) || 0;
             const district = districtSelect.value;
             const ageAdjustment = parseFloat(houseAgeSelect.value);
-            const renovationRate = parseFloat(renovationRateInput.value) || 0;
-            const locationRate = parseFloat(locationRateInput.value) || 0;
+            const renovationRate = parseFloat(renovationRateSelect.value) || 0;
+            const locationRate = parseFloat(locationRateSelect.value) || 0;
 
             // Validate area size
             const areaSizeError = document.getElementById('areaSizeError');
@@ -648,25 +640,25 @@ body {
             // Get unit price for selected district
             const unitPrice = areaPricing[district];
 
-            // Step 1: Base price
-            const basePrice = areaSize * unitPrice;
-            document.getElementById('basePrice').textContent = 'NT$ ' + formatNumber(basePrice);
-            document.getElementById('baseFormula').textContent = `${areaSize} × ${unitPrice} = ${formatNumber(basePrice)}`;
+            // Step 1: Unit price (單坪價格)
+            document.getElementById('unitPrice').textContent = 'NT$ ' + formatNumber(unitPrice);
+            document.getElementById('unitPriceFormula').textContent = `${district}: ${unitPrice}元/坪`;
 
-            // Step 2: Age adjustment
-            const ageAdjusted = basePrice * (1 - ageAdjustment);
-            document.getElementById('ageAdjusted').textContent = 'NT$ ' + formatNumber(ageAdjusted);
-            document.getElementById('ageFormula').textContent = `${formatNumber(basePrice)} × (1 - ${(ageAdjustment * 100).toFixed(0)}%) = ${formatNumber(ageAdjusted)}`;
+            // Step 2: Total adjustment rate (總調整率)
+            const totalAdjustment = ageAdjustment + (renovationRate / 100) + (locationRate / 100);
+            const totalAdjustmentPercent = (totalAdjustment * 100).toFixed(1);
+            document.getElementById('totalAdjustment').textContent = totalAdjustmentPercent + '%';
+            document.getElementById('totalAdjustmentFormula').textContent = `${(ageAdjustment * 100).toFixed(0)}% + ${renovationRate}% + ${locationRate}% = ${totalAdjustmentPercent}%`;
 
-            // Step 3: Renovation adjustment
-            const renovationAdjusted = ageAdjusted * (1 + renovationRate / 100);
-            document.getElementById('renovationAdjusted').textContent = 'NT$ ' + formatNumber(renovationAdjusted);
-            document.getElementById('renovationFormula').textContent = `${formatNumber(ageAdjusted)} × (1 + ${renovationRate}%) = ${formatNumber(renovationAdjusted)}`;
+            // Step 3: Adjusted unit price (調整後單坪價格)
+            const adjustedUnitPrice = unitPrice * (1 + totalAdjustment);
+            document.getElementById('adjustedUnit').textContent = 'NT$ ' + formatNumber(adjustedUnitPrice);
+            document.getElementById('adjustedUnitFormula').textContent = `${unitPrice} × (1 + ${totalAdjustmentPercent}%) = ${formatNumber(adjustedUnitPrice)}`;
 
-            // Step 4: Location adjustment
-            const finalPrice = renovationAdjusted * (1 + locationRate / 100);
-            document.getElementById('locationAdjusted').textContent = 'NT$ ' + formatNumber(finalPrice);
-            document.getElementById('locationFormula').textContent = `${formatNumber(renovationAdjusted)} × (1 + ${locationRate}%) = ${formatNumber(finalPrice)}`;
+            // Step 4: Final rental price (建議租金)
+            const finalPrice = adjustedUnitPrice * areaSize;
+            document.getElementById('finalBreakdown').textContent = 'NT$ ' + formatNumber(finalPrice);
+            document.getElementById('finalFormula').textContent = `${formatNumber(adjustedUnitPrice)} × ${areaSize} = ${formatNumber(finalPrice)}`;
 
             // Final result
             document.getElementById('finalPrice').textContent = 'NT$ ' + formatNumber(finalPrice);
@@ -708,19 +700,19 @@ body {
             areaSizeInput.value = '';
             districtSelect.value = '羅東鎮';
             houseAgeSelect.value = '0.10';
-            renovationRateInput.value = '0';
-            locationRateInput.value = '0';
+            renovationRateSelect.value = '0';
+            locationRateSelect.value = '0';
             
             document.getElementById('finalPrice').textContent = 'NT$ 0';
-            document.getElementById('basePrice').textContent = 'NT$ 0';
-            document.getElementById('ageAdjusted').textContent = 'NT$ 0';
-            document.getElementById('renovationAdjusted').textContent = 'NT$ 0';
-            document.getElementById('locationAdjusted').textContent = 'NT$ 0';
+            document.getElementById('unitPrice').textContent = 'NT$ 0';
+            document.getElementById('totalAdjustment').textContent = '0%';
+            document.getElementById('adjustedUnit').textContent = 'NT$ 0';
+            document.getElementById('finalBreakdown').textContent = 'NT$ 0';
             
-            document.getElementById('baseFormula').textContent = '坪數 × 行政區單價';
-            document.getElementById('ageFormula').textContent = '基礎單價 × (1 - 屋齡調整率)';
-            document.getElementById('renovationFormula').textContent = '上一步 × (1 + 裝修調整率%)';
-            document.getElementById('locationFormula').textContent = '上一步 × (1 + 區位調整率%)';
+            document.getElementById('unitPriceFormula').textContent = '行政區單價';
+            document.getElementById('totalAdjustmentFormula').textContent = '屋齡 + 裝修 + 區位';
+            document.getElementById('adjustedUnitFormula').textContent = '單坪價格 × (1 + 總調整率)';
+            document.getElementById('finalFormula').textContent = '調整後單坪價格 × 坪數';
             
             document.getElementById('areaSizeError').classList.remove('show');
         }
@@ -729,8 +721,8 @@ body {
         areaSizeInput.addEventListener('input', calculateRental);
         districtSelect.addEventListener('change', calculateRental);
         houseAgeSelect.addEventListener('change', calculateRental);
-        renovationRateInput.addEventListener('input', calculateRental);
-        locationRateInput.addEventListener('input', calculateRental);
+        renovationRateSelect.addEventListener('change', calculateRental);
+        locationRateSelect.addEventListener('change', calculateRental);
 
         // Button event listeners
         copyBtn.addEventListener('click', copyToClipboard);
