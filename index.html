@@ -20,8 +20,36 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1400px;
             margin: 0 auto;
+        }
+
+        .layout-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        .form-column {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .result-column {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        @media (max-width: 767px) {
+            .layout-wrapper {
+                flex-direction: column;
+            }
+            
+            .form-column,
+            .result-column {
+                width: 100%;
+            }
         }
 
         header {
@@ -264,7 +292,7 @@
             display: none;
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 767px) {
             body {
                 padding: 15px;
             }
@@ -288,6 +316,10 @@
 
             .button-group {
                 flex-direction: column;
+            }
+            
+            .layout-wrapper {
+                gap: 20px;
             }
         }
 
@@ -335,7 +367,9 @@
             <p class="subtitle">星鴻宜蘭團隊 - 專業租金評估工具</p>
         </header>
 
-        <div class="calculator-form">
+        <div class="layout-wrapper">
+            <div class="form-column">
+                <div class="calculator-form">
             <div class="form-section">
                 <label for="buildingType">建物型態 <span class="required">*</span></label>
                 <select id="buildingType">
@@ -397,9 +431,11 @@
                     <option value="5">+5%</option>
                 </select>
             </div>
-        </div>
+                </div>
+            </div>
 
-        <div class="result-section" id="resultSection">
+            <div class="result-column">
+                <div class="result-section" id="resultSection">
             <h2 class="result-title">計算結果</h2>
             
             <div class="result-main">
@@ -434,6 +470,8 @@
 
             <div class="info-box">
                 <strong>💡 提示：</strong>建議租金已根據建物型態、行政區、屋齡、裝修狀況及區位優勢進行綜合評估。實際租金可能因市場狀況而有所調整。
+            </div>
+                </div>
             </div>
         </div>
     </div>
